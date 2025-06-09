@@ -1,0 +1,3 @@
+data/casia-webface/*
+*__pycache__/
+uv/
