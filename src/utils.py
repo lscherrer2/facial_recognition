@@ -153,6 +153,11 @@ class FacesDataset(Dataset):
             s.loaded_data.append(person_imgs)
 
     def load_datapoint(s, same: bool):
+        # indices for the two loaded images
+        p1: int = 0
+        p2: int = 0
+        i1: int
+        i2: int
 
         # check if a refresh is required
         if s.num_gets >= s.num_loaded:
@@ -161,22 +166,24 @@ class FacesDataset(Dataset):
         # this function call itself is a get
         s.num_gets += 1
 
-        # indices for the two loaded images
-        p1: int
-        p2: int
-        i1: int
-        i2: int
+        retry = True
+        while retry:
 
-        if same:
-            # p1 and p2 are the same random index
-            p1 = random.randint(0, s.loaded_data.__len__() - 1)
-            p2 = p1
-        else:
-            # p1 and p2 are two different indices
-            p1 = random.randint(0, s.loaded_data.__len__() - 1)
-            p2 = random.randint(0, s.loaded_data.__len__() - 2)
-            if p2 >= p1:
-                p2 += 1
+            if same:
+                # p1 and p2 are the same random index
+                p1 = random.randint(0, s.loaded_data.__len__() - 1)
+                p2 = p1
+            else:
+                # p1 and p2 are two different indices
+                p1 = random.randint(0, s.loaded_data.__len__() - 1)
+                p2 = random.randint(0, s.loaded_data.__len__() - 2)
+                if p2 >= p1:
+                    p2 += 1
+        
+            if ((s.loaded_data[p1].__len__()) <= 2) or ((s.loaded_data[p2].__len__()) <= 2):
+                retry = True
+            else:
+                retry = False
 
         # i1 and i2 are either unrelated (different) or cannot be the same (same)
         i1 = random.randint(0, s.loaded_data[p1].__len__() - 1)

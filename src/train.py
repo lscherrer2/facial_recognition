@@ -5,31 +5,41 @@ import torch
 from torch import Tensor
 import os
 from pathlib import Path
+import json
 print("loaded dependencies")
+
+model_path = Path(__file__).parent/"model.weights".__str__()
+hp_path = Path(__file__).parent.parent/"hp.json".__str__()
+load = True if os.path.exists(model_path) and "--new" not in sys.argv else False
+if load:
+    with open(hp_path, "r") as f:
+        lr = json.load(f)["lr"]
+else:
+    lr = 0.001
 
 # load or initialize model
 model = (
     torch.load("model.weights", weights_only=False)
-    if os.path.exists((Path(__file__).parent/"model.weights").__str__()) and "--new" not in sys.argv
+    if load
     else SiameseNet(Model()).cuda()
 )
-if os.path.exists((Path(__file__).parent/"model.weights").__str__()) and "--new" not in sys.argv:
+if load:
     print("model loaded")
 else:
     print("model initialized")
 
 # specify hyperparameters
 EPOCHS = 1000
-BATCH_SIZE = 32
-INITIAL_LR = 0.001
+BATCH_SIZE = 64
+INITIAL_LR = lr
 loss_fn = torch.nn.MSELoss()
 optim = torch.optim.Adam(model.parameters(), lr=INITIAL_LR)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optim, patience=3)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optim, patience=2)
 
 # setup dataset-related utils
 dataset = FacesDataset(
     dataset_path= DATASET_PATH,
-    max_loaded = 1000,
+    max_loaded = 350,
     split = 0.8
 )
 dataloader = FacesDataLoader(
@@ -37,6 +47,8 @@ dataloader = FacesDataLoader(
     batch_size=BATCH_SIZE,
     similar_ratio = 0.5,
 )
+relu = torch.nn.ReLU()
+
 print("dataset loaded")
 print("beginning training")
 # training loop
@@ -64,7 +76,7 @@ for epoch in range(EPOCHS):
         y_true: Tensor = similarities
 
         # 2) compute loss
-        loss: Tensor = loss_fn(y_pred, y_true)
+        loss: Tensor = relu(loss_fn(y_pred, y_true))
         
         # 3) backward pass
         loss.backward()
@@ -80,10 +92,14 @@ for epoch in range(EPOCHS):
         batch_idx += 1
 
     # save the network
-    torch.save(model, "./model.weights")
+    torch.save(model, model_path)
 
     # step the scheduler
     scheduler.step(epoch_avg_loss)    
+
+    # save learning rate
+    with open(hp_path, "w") as f:
+        json.dump({"lr": optim.param_groups[0]["lr"]}, f)
 
     # set up loss tracker
     eval_avg_loss = 0
@@ -132,6 +148,7 @@ for epoch in range(EPOCHS):
 
     # print status
     print(f"epoch {epoch}, train_loss (avg): {epoch_avg_loss}, eval_loss (avg) {eval_avg_loss}, pct_correct: {avg_pct_correct}")
+
 
 
 
