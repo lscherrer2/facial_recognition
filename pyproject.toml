@@ -6,10 +6,10 @@ readme = "README.md"
 requires-python = ">=3.13"
 VIRTUAL_ENV="venv"
 dependencies = [
-    {name = "torch"}, 
-    {name = "torchvision"},
-    {name = "opencv-python"}, 
-    {name = "tqdm"}
+    "torch", 
+    "torchvision",
+    "opencv-python", 
+    "tqdm"
 ]
 
 [tool.pyright]
