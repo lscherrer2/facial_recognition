@@ -1,18 +1,10 @@
 [project]
 name = "facial-recognition"
 version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
 requires-python = ">=3.13"
-VIRTUAL_ENV="venv"
 dependencies = [
-    "torch", 
+    "torch",
     "torchvision",
-    "opencv-python", 
+    "opencv-python-headless",
     "tqdm"
 ]
-
-[tool.pyright]
-venvPath = "."
-venv = "venv"
-
